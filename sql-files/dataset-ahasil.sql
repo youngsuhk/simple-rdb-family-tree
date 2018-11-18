@@ -1,0 +1,68 @@
+VARIABLE gradpa_pid NUMBER;
+
+BEGIN
+    INSERT INTO PARENTS VALUES (
+        SYS_GUID(),
+        NULL,
+        NULL,
+        NULL
+    ) RETURNING PID INTO :grandpa_pid;
+    /* 할아버지 추가 */
+    INSERT INTO HUMAN VALUES (SYS_GUID(), '할아버지', 'M', '2016-10-15', NULL, :grandpa_pid, NULL);
+    /* 작은할아버지 추가 */
+    INSERT INTO HUMAN VALUES (SYS_GUID(), '작은할아버지', 'M', '2016-10-16', NULL, :grandpa_pid, NULL);
+END;
+/
+
+/* 외증조할머니 추가 */
+INSERT INTO HUMAN VALUES (SYS_GUID(), '외증조할머니', 'M', '2015-11-15', NULL, NULL, NULL);
+
+/* 외할아버지 추가 */
+INSERT INTO PARENTS VALUES (
+    SYS_GUID(),
+    NULL,
+    (SELECT HID FROM HUMAN WHERE NAME = '외증조할머니'),
+    NULL
+);
+INSERT INTO HUMAN VALUES (SYS_GUID(), '외할아버지', 'M', '2016-11-15', NULL, (
+    SELECT P.PID FROM PARENTS P, HUMAN MH WHERE P.MHID = MH.HID AND MH.NAME = '외증조할머니'
+), NULL);
+
+/* 아버지 추가 */
+INSERT INTO PARENTS VALUES (
+    SYS_GUID(),
+    (SELECT HID FROM HUMAN WHERE NAME = '할아버지'),
+    NULL,
+    NULL
+);
+INSERT INTO HUMAN VALUES (SYS_GUID(), '아버지', 'M', '2017-10-15', NULL, (
+    SELECT P.PID FROM PARENTS P, HUMAN FH WHERE P.FHID = FH.HID AND FH.NAME = '할아버지'
+), NULL);
+
+/* 어머니 및 결혼 추가 */
+INSERT INTO PARENTS VALUES (
+    SYS_GUID(),
+    (SELECT HID FROM HUMAN WHERE NAME = '외할아버지'),
+    NULL,
+    NULL
+);
+INSERT INTO HUMAN VALUES (SYS_GUID(), '어머니', 'F', '2017-10-15', NULL, (
+    SELECT P.PID FROM PARENTS P, HUMAN FH WHERE P.FHID = FH.HID AND FH.NAME = '외할아버지'
+), NULL);
+
+/* 여자 하나 추가 */
+INSERT INTO PARENTS VALUES (
+    SYS_GUID(),
+    (SELECT HID FROM HUMAN WHERE NAME = '아버지'),
+    (SELECT HID FROM HUMAN WHERE NAME = '어머니'),
+    NULL
+);
+INSERT INTO HUMAN VALUES (SYS_GUID(), '여자', 'F', '2018-10-15', NULL, (
+    SELECT P.PID FROM PARENTS P, HUMAN FH WHERE P.FHID = FH.HID AND FH.NAME = '아버지'
+), NULL);
+
+
+/* SELECT statements */
+SELECT * FROM HUMAN_WITH_PARENTS ORDER BY BIRTH;
+
+SELECT * FROM PARENTS_WITH_NAMES;
